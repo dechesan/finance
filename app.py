@@ -44,7 +44,47 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+
+    # User reached route via POST (as by submitting the buy form)
+    if request.method == "POST":
+        # Make sure user entered a symbol
+        symbol = request.form.get("symbol")
+        if not symbol:
+            return apology("missing symbol")
+        
+        # Look up symbol on Yahoo Finance using helper function
+        share = lookup(symbol)
+
+        # Make sure symbol is valid
+        if not share:
+            return apology("invalid symbol")
+        
+        # Make sure user entered the number of shares they wish to buy
+        shares_buying = request.form.get("shares")
+        if not shares_buying:
+            return apology("missing shares")
+        
+        # Make sure user entered an integer
+        if not shares_buying.isdigit():
+            return apology("enter a whole number")
+        
+        # Make sure user entered positive number
+        if int(shares_buying) < 1:
+            return apology("enter positive number")
+        
+        # Get share price
+        price = share["price"]
+
+        # Get user's current cash
+        cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+
+        # TODO: Add one or more new tables to finance.db via which to keep track of the purchase.
+        # Store enough information so that you know who bought what at what price and when.
+
+        return redirect("/")
+    # User reached route via GET
+    else:
+        return render_template("buy.html")
 
 
 @app.route("/history")
