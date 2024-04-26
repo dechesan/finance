@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Portfolio
+{% endblock %}
+
+{% block main %}
+    <table>
+        <thead>
+            <th>Symbol</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>TOTAL</th>
+        </thead>
+        {% for row in rows %}
+            <!-- Add row data -->
+        {% endfor %}
+    </table>
+{% endblock %}
