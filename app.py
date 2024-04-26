@@ -108,7 +108,24 @@ def logout():
 @login_required
 def quote():
     """Get stock quote."""
-    return apology("TODO")
+
+    # User reached route via POST (as by submitting the quote form)
+    if request.method == "POST":
+        symbol = request.form.get("symbol")
+
+        # Make sure user didn't submit an empty form
+        if not symbol:
+            return apology("missing symbol")
+        
+        # Look up the symbol on Yahoo finance using helper function
+        share = lookup(symbol)
+        
+        # Display the quote
+        return render_template("quoted.html", symbol=share["symbol"], price=usd(share["price"]))
+
+    # User reached route via GET
+    else:
+        return render_template("quote.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
