@@ -119,6 +119,10 @@ def quote():
         
         # Look up the symbol on Yahoo finance using helper function
         share = lookup(symbol)
+
+        # Make sure symbol is valid
+        if not share:
+            return apology("invalid symbol")
         
         # Display the quote
         return render_template("quoted.html", symbol=share["symbol"], price=usd(share["price"]))
