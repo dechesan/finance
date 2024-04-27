@@ -67,19 +67,38 @@ def buy():
         # Make sure user entered an integer
         if not shares_buying.isdigit():
             return apology("enter a whole number")
+
+        # Change from string to int
+        shares_buying = int(shares_buying)
         
         # Make sure user entered positive number
-        if int(shares_buying) < 1:
+        if shares_buying < 1:
             return apology("enter positive number")
         
         # Get share price
         price = share["price"]
 
         # Get user's current cash
-        cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+        user_cash_before = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
 
-        # TODO: Add one or more new tables to finance.db via which to keep track of the purchase.
-        # Store enough information so that you know who bought what at what price and when.
+        # The amount of money the user needs in order to complete the transaction
+        cash_needed = price * shares_buying
+
+        # User's cash after transaction
+        user_cash_after = user_cash_before - cash_needed
+
+        # Check and handle if the user can't afford the transaction
+        if user_cash_after < 0:
+            return apology("need more moneyz")
+
+        # Deduct the cash from the user
+        db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash_after, session["user_id"])
+
+        # Log transaction in transaction table
+        db.execute(
+            "INSERT INTO transactions (user_id, symbol, shares, price, datetime) VALUES (?, ?, ?, ?, datetime('now'))",
+            session["user_id"], symbol, shares_buying, price
+        )
 
         return redirect("/")
     # User reached route via GET
