@@ -338,7 +338,42 @@ def sell():
 @login_required
 def funds():
     """ Show option to add more cash to account """
-    return render_template("funds.html")
+
+    # User reached route via POST (as by submitting the form to add funds)
+    if request.method == "POST":
+        # Get the user's input
+        cash_adding = request.form.get("cash")
+
+        # Make sure the user didn't submit a blank form
+        if not cash_adding:
+            return apology("missing amount")
+        
+        # Make sure user entered a number
+        try:
+            cash_adding = float(cash_adding)
+        except ValueError:
+            return apology("enter a number")
+        
+        # Make sure the user entered at least 1 dollar
+        if cash_adding < 1:
+            return apology("minimum amount is $1.00")
+        
+        # Get the user's current cash from the DB, and add the new funds to that amount
+        new_total = float(db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]) + cash_adding
+        
+        # Update the user's cash amount in the DB
+        db.execute("UPDATE users SET cash = ? WHERE id = ?", new_total, session["user_id"])
+
+        # Store message to be displayed on the next page load
+        flash(f"Funds added: ${cash_adding:,.2f}")
+
+        # Redirect user to homepage
+        return redirect("/")
+    
+    # User reached route via GET
+    else:
+        # Display the form to add funds
+        return render_template("funds.html")
 
 @app.route("/settings", methods=["GET", "POST"])
 @login_required

@@ -5,5 +5,12 @@
 {% endblock %}
 
 {% block main %}
+    <h3 class="title">Add Funds to Your Account</h3>
 
+    <form action="/funds" method="post">
+        <div class="mb-3">
+            <input class="form-control mx-auto w-auto" type="number" step="0.01" name="cash" placeholder="Amount" autocomplete="off" autofocus required min="1">
+        </div>
+        <button class="btn btn-primary" type="submit">Add</button>
+    </form>
 {% endblock %}
