@@ -334,6 +334,61 @@ def sell():
         return render_template("sell.html", symbols=symbols)
 
 
+@app.route("/funds", methods=["GET", "POST"])
+@login_required
+def funds():
+    """ Show option to add more cash to account """
+    return render_template("funds.html")
+
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+     """ Show settings for the user's account """
+
+    # User reached route via POST (as by submitting the form to change password)
+     if request.method == "POST":
+
+        # Get user's input
+        old_pass = request.form.get("old_pass")
+        new_pass = request.form.get("new_pass")
+        confirmation = request.form.get("confirmation")
+
+        # Make sure user filled in all fields
+        if not old_pass:
+            return apology("please enter old password")
+        if not new_pass:
+            return apology("please enter new password")
+        if not confirmation:
+            return apology("please re-enter new password")
+        
+        # Make sure user re-entered the same password
+        if not new_pass == confirmation:
+            return apology("passwords do not match")
+        
+        # Get the hash of the old password from DB
+        old_hash = db.execute("SELECT hash FROM users WHERE id = ?", session["user_id"])[0]["hash"]
+
+        # Check if the old password entered by the user is correct
+        if not check_password_hash(old_hash, old_pass):
+            return apology("old password is incorrect")
+        
+        # Make a hash for the new password
+        new_hash = generate_password_hash(new_pass)
+
+        # Update DB with new hash
+        db.execute("UPDATE users SET hash = ? WHERE id = ?", new_hash, session["user_id"])
+
+        # Store message to be displayed on next page load
+        flash("Password Updated!")
+
+        # Reload page
+        return redirect("/settings")
+     
+     # User reached page via GET
+     else:
+        return render_template("settings.html")
+
+
 def get_portfolio():
     # Get the symbols from all of the user's transactions. Returns list of dicts
     symbols = db.execute("SELECT symbol FROM transactions WHERE user_id = ? GROUP BY symbol", session["user_id"])
