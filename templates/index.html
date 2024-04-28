@@ -5,15 +5,34 @@
 {% endblock %}
 
 {% block main %}
-    <table>
+    <table class="table table-striped">
         <thead>
-            <th>Symbol</th>
-            <th>Shares</th>
-            <th>Price</th>
-            <th>TOTAL</th>
+            <tr>
+                <th class="text-start">Symbol</th>
+                <th class="text-end">Shares</th>
+                <th class="text-end">Price</th>
+                <th class="text-end">TOTAL</th>
+            </tr>
         </thead>
-        {% for row in rows %}
-            <!-- Add row data -->
-        {% endfor %}
+        <tbody>
+            {% for row in portfolio %}
+                <tr>
+                    <td class="text-start">{{ row.symbol }}</td>
+                    <td class="text-end">{{ row.shares }}</td>
+                    <td class="text-end">{{ row.price }}</td>
+                    <td class="text-end">{{ row.total }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td class="border-0 fw-bold text-end" colspan="3">Cash</td>
+                <td class="border-0 text-end">{{ cash }}</td>
+            </tr>
+            <tr>
+                <td class="border-0 fw-bold text-end" colspan="3">TOTAL</td>
+                <td class="border-0 text-end">{{ total }}</td>
+            </tr>
+        </tfoot>
     </table>
 {% endblock %}

@@ -37,7 +37,38 @@ if __name__ == '__main__':
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return render_template("index.html")
+    # For the current user get: symbol, shares, price, total
+
+    # Get the user's symbols. Returns list of dicts
+    symbol = db.execute("SELECT symbol FROM transactions WHERE user_id = ? GROUP BY symbol", session["user_id"])
+
+    # Convert list of dicts into a list of all dict values using list comprehension
+    symbols = [(d['symbol']) for d in symbol]
+
+    # Will store all of the user's stocks
+    portfolio = []
+
+    # Populate portfolio
+    for symbol in symbols:
+        shares = int(db.execute("SELECT SUM(shares) FROM transactions WHERE user_id = ? AND symbol=? GROUP BY symbol", session["user_id"], symbol)[0]['SUM(shares)'])
+        price = float(lookup(symbol)["price"])
+        total = shares * price
+        portfolio.append({'symbol': symbol, 'shares': shares, 'price': price, 'total': total})
+
+    # Get user's cash
+    cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+
+    # Get the total value of the user's portfolio + cash held, and convert all values to USD strings
+    total = cash
+    for row in portfolio:
+        total += row['total']
+        row['price'] = usd(row['price'])
+        row['total'] = usd(row['total'])
+    cash = usd(cash)
+    total = usd(total)
+
+    # Send rows, cash, total
+    return render_template("index.html", portfolio=portfolio, cash=cash, total=total)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -97,10 +128,15 @@ def buy():
         # Log transaction in transaction table
         db.execute(
             "INSERT INTO transactions (user_id, symbol, shares, price, datetime) VALUES (?, ?, ?, ?, datetime('now'))",
-            session["user_id"], symbol, shares_buying, price
+            session["user_id"], symbol.upper(), shares_buying, price
         )
 
+        # Store message to display to user on the next page
+        flash("Bought!")
+
+        # Return user to their portfolio page
         return redirect("/")
+    
     # User reached route via GET
     else:
         return render_template("buy.html")
