@@ -19,19 +19,19 @@
                 <tr>
                     <td class="text-start">{{ row.symbol }}</td>
                     <td class="text-end">{{ row.shares }}</td>
-                    <td class="text-end">{{ row.price }}</td>
-                    <td class="text-end">{{ row.total }}</td>
+                    <td class="text-end">{{ row.price | usd }}</td>
+                    <td class="text-end">{{ row.total | usd }}</td>
                 </tr>
             {% endfor %}
         </tbody>
         <tfoot>
             <tr>
                 <td class="border-0 fw-bold text-end" colspan="3">Cash</td>
-                <td class="border-0 text-end">{{ cash }}</td>
+                <td class="border-0 text-end">{{ cash | usd }}</td>
             </tr>
             <tr>
                 <td class="border-0 fw-bold text-end" colspan="3">TOTAL</td>
-                <td class="border-0 text-end">{{ total }}</td>
+                <td class="border-0 text-end">{{ total | usd }}</td>
             </tr>
         </tfoot>
     </table>

@@ -44,14 +44,10 @@ def index():
     # Get user's cash
     cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
 
-    # Get the total value of the user's portfolio + cash held, and convert all values to USD strings
+    # Get the total value of the user's portfolio + cash held
     total = cash
     for row in portfolio:
         total += row['total']
-        row['price'] = usd(row['price'])
-        row['total'] = usd(row['total'])
-    cash = usd(cash)
-    total = usd(total)
 
     # Send rows, cash, total
     return render_template("index.html", portfolio=portfolio, cash=cash, total=total)
