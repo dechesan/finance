@@ -37,23 +37,9 @@ if __name__ == '__main__':
 @login_required
 def index():
     """Show portfolio of stocks"""
-    # For the current user get: symbol, shares, price, total
 
-    # Get the user's symbols. Returns list of dicts
-    symbol = db.execute("SELECT symbol FROM transactions WHERE user_id = ? GROUP BY symbol", session["user_id"])
-
-    # Convert list of dicts into a list of all dict values using list comprehension
-    symbols = [(d['symbol']) for d in symbol]
-
-    # Will store all of the user's stocks
-    portfolio = []
-
-    # Populate portfolio
-    for symbol in symbols:
-        shares = int(db.execute("SELECT SUM(shares) FROM transactions WHERE user_id = ? AND symbol=? GROUP BY symbol", session["user_id"], symbol)[0]['SUM(shares)'])
-        price = float(lookup(symbol)["price"])
-        total = shares * price
-        portfolio.append({'symbol': symbol, 'shares': shares, 'price': price, 'total': total})
+    # Get the user's portfolio
+    portfolio = get_portfolio()
 
     # Get user's cash
     cash = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
@@ -267,4 +253,103 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    return apology("TODO")
+
+    # Get the user's portfolio
+    portfolio = get_portfolio()
+
+    # List of all symbols currently owned by the user
+    symbols = []
+
+    # Populate list of symbols owned by the user
+    for row in portfolio:
+        symbols.append(row['symbol'])
+    
+    # User reached route via POST (as by submitting the sell form)
+    if request.method == "POST":
+        # Get the symbol entered by the user of the stock they wish to sell
+        symbol = request.form.get("symbol")
+        
+        # Make sure the user actually entered a symbol
+        if not symbol:
+            return apology("missing symbol")
+        
+        # Make sure the user entered a symbol for a stock they own
+        if symbol not in symbols:
+            return apology("invalid symbol")
+        
+        # Get the amount of shares entered by the user
+        shares_selling = request.form.get("shares")
+
+        # Make sure there is input for share amount
+        if not shares_selling:
+            return apology("missing shares")
+        
+        # Make sure user entered an integer
+        if not shares_selling.isdigit():
+            return apology("invalid 'shares' input")
+        
+        # Convert value to int
+        shares_selling = int(shares_selling)
+        
+        # Make sure user entered a valid number of shares to sell
+        if shares_selling < 1:
+            return apology("shares less than 1")
+
+        # Initializing variable for the shares held by the user of their selected stock
+        shares_held_before = 0
+
+        # Initializing variable for the current price of the selected stock
+        price = 0
+
+        # Get the number and price of shares held by the user for their selected stock 
+        for row in portfolio:
+            if row['symbol'] == symbol:
+                shares_held_before = row['shares']
+                price = row['price']
+
+        # Confirm that the user has enough shares to sell
+        if shares_held_before < shares_selling:
+            return apology("insufficient shares")
+
+        # Sell the shares
+        cash_held_before = db.execute("SELECT cash FROM users WHERE id = ?", session["user_id"])[0]["cash"]
+        cash_gained = shares_selling * price
+        cash_held_after = cash_held_before + cash_gained
+
+        # Add cash to the user's account
+        db.execute("UPDATE users SET cash = ? WHERE id = ?", cash_held_after, session["user_id"])
+
+        # Log the transaction
+        db.execute("INSERT INTO transactions (user_id, symbol, shares, price, datetime) VALUES (?, ?, ?, ?, datetime('now'))",
+                   session["user_id"], symbol, (shares_selling * -1), price)
+
+        # Store message to display to user on the next page
+        flash("Sold!")
+
+        # Redirect user to homepage
+        return redirect("/")
+    
+    # User reached route via GET
+    else:
+        return render_template("sell.html", symbols=symbols)
+
+
+def get_portfolio():
+    # Get the symbols from all of the user's transactions. Returns list of dicts
+    symbols = db.execute("SELECT symbol FROM transactions WHERE user_id = ? GROUP BY symbol", session["user_id"])
+
+    # Convert list of dicts into a list of all dict values using list comprehension
+    symbols = [(d['symbol']) for d in symbols]
+
+    # Will store all of the user's stocks
+    portfolio = []
+
+    # Populate portfolio
+    for symbol in symbols:
+        shares = int(db.execute("SELECT SUM(shares) FROM transactions WHERE user_id = ? AND symbol=? GROUP BY symbol", session["user_id"], symbol)[0]['SUM(shares)'])
+        if shares > 0:
+            price = float(lookup(symbol)["price"])
+            total = shares * price
+            portfolio.append({'symbol': symbol, 'shares': shares, 'price': price, 'total': total})
+
+    return portfolio
